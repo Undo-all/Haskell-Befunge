@@ -13,7 +13,7 @@ data Direction = U
 
 data InterpreterState = InterpreterState
                       { stringMode :: Bool
-                      , halted :: Bool
+                      , running :: Bool
                       , stack :: [Int]
                       , direction :: Direction
                       , insPtr :: (Int, Int)
@@ -25,24 +25,24 @@ type Interpreter = StateT InterpreterState IO
 top :: Interpreter Int
 top = do
     stk <- gets stack
-    if null stk 
-      then return 0
-      else return $ head stk
+    case stk of
+      [] -> return 0
+      _  -> return (head stk)
 
 pop :: Interpreter Int
 pop = do
     stk <- gets stack
-    if null stk
-      then return 0
-      else do modify $ \x -> x { stack = tail (stack x) }
-              return (head stk)
+    case stk of
+      [] -> return 0
+      _  -> do modify $ \s -> s { stack = tail (stack s) }
+               return (head stk)
 
 push :: Int -> Interpreter ()
 push n = do
-    modify $ \x -> x { stack = n : (stack x) }
+    modify $ \s -> s { stack = n : (stack s) }
 
 changeDir :: Direction -> Interpreter ()
-changeDir d = modify $ \x -> x { direction = d }
+changeDir d = modify $ \s -> s { direction = d }
 
 move :: Interpreter ()
 move = do
@@ -57,16 +57,11 @@ move = do
             D -> (x, wrap (y + 1) height)
             L -> (wrap (x - 1) width, y)
             R -> (wrap (x + 1) width, y)
-    modify $ \x -> x { insPtr = newPtr }
+    modify $ \s -> s { insPtr = newPtr }
     where wrap x y
               | x >= y    = 0
               | x < 0     = y - 1
               | otherwise = x
-
-pos :: Int -> Int
-pos n
-    | n < 0     = 0
-    | otherwise = n
 
 interpret :: Char -> Interpreter ()
 interpret '+' = do
@@ -84,12 +79,12 @@ interpret '*' = do
 interpret '/' = do
     a <- pop
     b <- pop
-    if a /= 0
-      then push $ floor ((fromIntegral b) / (fromIntegral a))
-      else do lift $ putStr "Division by zero! Desired value: "
+    case a of 
+      0 -> do lift $ putStr "Division by zero! Desired value: "
               lift $ hFlush stdout
               n <- lift getLine
               push $ read n
+      _ -> push $ floor ((fromIntegral b) / (fromIntegral a))
 interpret '%' = do
     a <- pop
     b <- pop
@@ -111,7 +106,7 @@ interpret 'v' = do
     changeDir D
 interpret '?' = do
     newDir <- lift $ choice [U,D,L,R]
-    modify $ \x -> x { direction = newDir }
+    changeDir newDir
     where choice xs = (xs !!) <$> randomRIO (0, length xs - 1) 
 interpret '_' = do
     a <- pop
@@ -120,7 +115,7 @@ interpret '|' = do
     a <- pop
     changeDir $ if a == 0 then D else U
 interpret '"' = do
-    modify $ \x -> x { stringMode = not (stringMode x) }
+    modify $ \s -> s { stringMode = not (stringMode s) }
 interpret ':' = do
     a <- top
     push a
@@ -137,7 +132,7 @@ interpret '.' = do
     lift $ putStr (show a)
 interpret ',' = do
     a <- pop
-    lift $ putChar (chr $ pos a)
+    lift $ putChar (chr a)
 interpret '#' = do
     move
 interpret 'g' = do
@@ -149,7 +144,7 @@ interpret 'p' = do
     y <- pop
     x <- pop
     v <- pop
-    modify $ \s -> s { program = program s V.// [(y, (program s V.! y) V.// [(x, chr $ pos v)])] }
+    modify $ \s -> s { program = program s V.// [(y, (program s V.! y) V.// [(x, chr v)])] }
 interpret '&' = do
     x <- lift $ getLine
     push $ read x
@@ -157,27 +152,27 @@ interpret '~' = do
     x <- lift $ getChar
     push $ ord x
 interpret '@' = do
-    modify $ \x -> x { halted = True } 
+    modify $ \s -> s { running = False } 
 interpret c | isDigit c = push $ read [c]
 interpret _ = return ()
 
 eval :: Interpreter ()
-eval = do r <- gets halted
-          if r
-            then return ()
-            else do (x, y) <- gets insPtr
-                    prog <- gets program
-                    let c = prog V.! y V.! x
-                    sm <- gets stringMode
-                    if sm 
-                      then case c of 
-                              '"' -> modify $ \x -> x { stringMode = not (stringMode x) }
-                              _   -> push (ord c)
-                      else interpret c
-                    move
-                    eval
+eval = do 
+    r <- gets running
+    when r $
+      do (x, y) <- gets insPtr
+         prog <- gets program
+         let c = prog V.! y V.! x
+         sm <- gets stringMode
+         if sm 
+           then case c of 
+                   '"' -> modify $ \s -> s { stringMode = not (stringMode s) }
+                   _   -> push (ord c)
+           else interpret c
+         move
+         eval
 
-initState prog = InterpreterState False False [] R (0, 0) prog
+initState prog = InterpreterState False True [] R (0, 0) prog
 
 run :: String -> IO InterpreterState
 run xs = execStateT eval (initState prog)
