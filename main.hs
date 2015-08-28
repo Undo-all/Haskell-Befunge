@@ -95,14 +95,10 @@ interpret '`' = do
     a <- pop
     b <- pop
     if b > a then push 1 else push 0
-interpret '>' = do
-    changeDir R
-interpret '<' = do
-    changeDir L
-interpret '^' = do
-    changeDir U
-interpret 'v' = do
-    changeDir D
+interpret '>' = changeDir R
+interpret '<' = changeDir L
+interpret '^' = changeDir U
+interpret 'v' = changeDir D
 interpret '?' = do
     newDir <- lift $ choice [U,D,L,R]
     changeDir newDir
