@@ -87,7 +87,7 @@ interpret '/' = do
 interpret '%' = do
     a <- pop
     b <- pop
-    push $ a `mod` a
+    push $ b `mod` a
 interpret '!' = do
     a <- pop
     if a == 0 then push 1 else push 0
