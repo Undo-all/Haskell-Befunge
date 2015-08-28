@@ -153,7 +153,7 @@ interpret '~' = do
     push $ ord x
 interpret '@' = do
     modify $ \s -> s { running = False } 
-interpret c | isDigit c = push $ read [c]
+interpret c | isDigit c = push $ ord c - 48
 interpret _ = return ()
 
 eval :: Interpreter ()
