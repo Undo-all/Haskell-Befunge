@@ -62,6 +62,11 @@ move = do
               | x < 0     = y - 1
               | otherwise = x
 
+pos :: Int -> Int
+pos n
+    | n < 0     = 0
+    | otherwise = n
+
 interpret :: Char -> Interpreter ()
 interpret '+' = do
     a <- pop
@@ -126,7 +131,7 @@ interpret '.' = do
     lift $ putStr (show a)
 interpret ',' = do
     a <- pop
-    lift $ putChar (chr a)
+    lift $ putChar (chr $ pos a)
 interpret '#' = do
     move
 interpret 'g' = do
@@ -138,7 +143,7 @@ interpret 'p' = do
     y <- pop
     x <- pop
     v <- pop
-    modify $ \s -> s { program = program s V.// [(y, (program s V.! y) V.// [(x, chr v)])] }
+    modify $ \s -> s { program = program s V.// [(y, (program s V.! y) V.// [(x, chr $ pos v)])] }
 interpret '&' = do
     x <- lift $ getLine
     push $ read x
@@ -148,7 +153,7 @@ interpret '~' = do
 interpret '@' = do
     modify $ \x -> x { halted = True } 
 interpret c | isDigit c = push $ read [c]
-interpret ' ' = return ()
+interpret _ = return ()
 
 eval :: Interpreter ()
 eval = do r <- gets halted
