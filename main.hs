@@ -1,10 +1,9 @@
 import Control.Monad.State
-import System.Random
+import System.Random (randomRIO)
 import qualified Data.Vector as V
-import Data.Char
-import System.Environment
-import Debug.Trace
-import System.IO
+import Data.Char (isDigit, chr, ord)
+import System.Environment (getArgs)
+import System.IO (hFlush, stdout)
 
 data Direction = U
                | D
