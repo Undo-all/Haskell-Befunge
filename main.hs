@@ -4,6 +4,7 @@ import qualified Data.Vector as V
 import Data.Char
 import System.Environment
 import Debug.Trace
+import System.IO
 
 data Direction = U
                | D
@@ -83,7 +84,12 @@ interpret '*' = do
 interpret '/' = do
     a <- pop
     b <- pop
-    push $ floor ((fromIntegral b) / (fromIntegral a))
+    if a /= 0
+      then push $ floor ((fromIntegral b) / (fromIntegral a))
+      else do lift $ putStr "Division by zero! Desired value: "
+              lift $ hFlush stdout
+              n <- lift getLine
+              push $ read n
 interpret '%' = do
     a <- pop
     b <- pop
