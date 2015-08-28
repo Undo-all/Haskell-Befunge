@@ -128,8 +128,7 @@ interpret '.' = do
 interpret ',' = do
     a <- pop
     lift $ putChar (chr a)
-interpret '#' = do
-    move
+interpret '#' = move
 interpret 'g' = do
     y <- pop
     x <- pop
