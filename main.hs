@@ -174,8 +174,8 @@ eval = do
 
 initState prog = InterpreterState False True [] R (0, 0) prog
 
-run :: String -> IO InterpreterState
-run xs = execStateT eval (initState prog)
+run :: String -> IO ()
+run xs = evalStateT eval (initState prog)
     where prog       = V.fromList $ map V.fromList (pad $ lines xs)
           pad xss    = map (space (maximum (map length xss))) xss
           space n xs = xs ++ replicate (n - length xs) ' '
