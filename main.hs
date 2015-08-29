@@ -62,19 +62,16 @@ move = do
               | x < 0     = y - 1
               | otherwise = x
 
+interpretBinOp :: (Int -> Int -> Int) -> Interpreter ()
+interpretBinOp f = do
+    a <- pop
+    b <- pop
+    push (f b a)
+
 interpret :: Char -> Interpreter ()
-interpret '+' = do
-    a <- pop
-    b <- pop
-    push (a+b)
-interpret '-' = do
-    a <- pop
-    b <- pop
-    push (b-a)
-interpret '*' = do
-    a <- pop
-    b <- pop
-    push (a*b)
+interpret '+' = interpretBinOp (+)
+interpret '-' = interpretBinOp (-)
+interpret '*' = interpretBinOp (*)
 interpret '/' = do
     a <- pop
     b <- pop
@@ -84,10 +81,7 @@ interpret '/' = do
               n <- lift getLine
               push $ read n
       _ -> push $ floor ((fromIntegral b) / (fromIntegral a))
-interpret '%' = do
-    a <- pop
-    b <- pop
-    push $ b `mod` a
+interpret '%' = interpretBinOp mod
 interpret '!' = do
     a <- pop
     if a == 0 then push 1 else push 0
